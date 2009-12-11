@@ -1,7 +1,7 @@
 package Pod::Elemental::Transformer::SynHi;
 use Moose::Role;
 with 'Pod::Elemental::Transformer';
-# ABSTRACT: a role for transforming code into syntax highlighted XHTML regions
+# ABSTRACT: a role for transforming code into syntax highlighted HTML regions
 
 requires 'synhi_params_for_para';
 requires 'build_html';
@@ -10,7 +10,7 @@ sub build_html_para {
   my ($self, $arg) = @_;
 
   my $new = Pod::Elemental::Element::Pod5::Region->new({
-    format_name => 'xhtml',
+    format_name => 'html',
     is_pod      => 0,
     content     => '',
     children    => [
@@ -45,11 +45,6 @@ sub standard_code_block {
         . "<td class='code'><br /><code>$code</code><br />&nbsp;</td>"
         . "</table>";
 
-  # This should not be needed, because this is a data paragraph, not a
-  # ordinary paragraph, but Pod::Xhtml doesn't seem to know the difference
-  # and tries to expand format codes. -- rjbs, 2009-11-20
-  $html =~ s/^/  /gsm;
-
   return $html;
 }
 
@@ -62,7 +57,7 @@ sub transform_node {
     next unless my $arg = $self->synhi_params_for_para($para);
     my $new = $self->build_html_para($arg);
 
-    die "couldn't produce new xhtml" unless $new;
+    die "couldn't produce new html" unless $new;
     $node->children->[ $i ] = $new;
   }
 

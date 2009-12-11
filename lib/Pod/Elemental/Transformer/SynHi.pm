@@ -1,7 +1,7 @@
 package Pod::Elemental::Transformer::SynHi;
 use Moose::Role;
 with 'Pod::Elemental::Transformer';
-# ABSTRACT: a role for transformers that go from Pod to "=begin xhtml"
+# ABSTRACT: a role for transforming code into syntax highlighted XHTML regions
 
 requires 'synhi_params_for_para';
 requires 'build_html';

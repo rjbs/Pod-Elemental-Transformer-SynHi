@@ -2,5 +2,5 @@
 use strict;
 use warnings;
 use Test::More tests => 1;
-use WWW::AdventCalendar;
+use Pod::Elemental::Transformer::SynHi;
 pass('we compile');

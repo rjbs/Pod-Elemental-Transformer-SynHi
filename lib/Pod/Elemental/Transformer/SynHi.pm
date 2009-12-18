@@ -15,16 +15,13 @@ returns false, nothing happens.  If it returns a true value, that value will be
 passed to the C<build_html> method, which should return HTML to be placed in an
 C<html> region and used to replace the node that was found.
 
-For example, you might provide these two methods and nothing else:
+The role provides a default C<synhi_params_for_para> which expects either
+regions like C<=begin :format_name param> or verbatim paragraphs beginning with
+C<#!format_name param> and calls C<extra_synhi_params> with the C<param> string
+found.  The default C<extra_synhi_params> will raise an exception if the param
+string is not empty.
 
-  sub synhi_params_for_para {
-    my ($self, $para) = @_;
-
-    return unless $para->isa('Pod::Elemental::Element::Pod5::Region')
-           and    $para->format_name eq 'javascript' and ! $para->is_pod;
-
-    return { content => $para->children->[0]->content };
-  }
+In effect, that means you can provide just one method:
 
   sub build_html {
     my ($self, $arg) = @_;
@@ -40,8 +37,53 @@ Some other methods exist and can be replaced.
 
 =cut
 
-requires 'synhi_params_for_para';
 requires 'build_html';
+requires 'format_name';
+
+=method synhi_params_for_para
+
+=cut
+
+sub synhi_params_for_para {
+  my ($self, $para) = @_;
+
+  my $name = $self->format_name;
+
+  if (
+    $para->isa('Pod::Elemental::Element::Pod5::Region')
+    and    $para->format_name eq $name
+  ) {
+    confess "=begin :$name makes no sense; must be non-Pod region"
+      if $para->is_pod;
+
+    my $param_str = $para->content;
+    my $arg = $self->extra_synhi_params($param_str);
+    return {
+      %$arg,
+      content => $para->children->[0]->as_pod_string,
+    };
+  } elsif ($para->isa('Pod::Elemental::Element::Pod5::Verbatim')) {
+    my $content = $para->content;
+    return unless $content =~ s/\A\s*#!\Q$name\E(?:[\x20\t]+([^\n]+)?)?\n+//gm;
+
+    my $arg = $self->extra_synhi_params($1);
+    return {
+      %$arg,
+      content => $content,
+    };
+  }
+
+  return;
+}
+
+sub extra_synhi_params {
+  my ($self, $str) = @_;
+
+  confess "don't know how to parse synhi region params: $str"
+    if defined $str and $str =~ /\S/;
+
+  return {};
+}
 
 =method build_html_para
 

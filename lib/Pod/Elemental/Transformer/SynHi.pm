@@ -3,44 +3,91 @@ use Moose::Role;
 with 'Pod::Elemental::Transformer';
 # ABSTRACT: a role for transforming code into syntax highlighted HTML regions
 
-=head1 DESCRIPTION
+use Pod::Elemental::Types qw(FormatName);
+
+use namespace::autoclean;
+
+=head1 OVERVIEW
 
 Pod::Elemental::Transformer::SynHi is a role to be included by transformers
 that replace parts of the Pod document with C<html> regions, presumably to be
 consumed by a downstream Pod-to-HTML transformer.
 
+If your class composes this role, you only need to write one method,
+C<build_html>.  It will be called like this:
+
+  sub build_html {
+    my ($self, $content, $param) = @_;
+
+    return Some::Syntax::Highlighter->javascript_to_html( $content );
+  }
+
+That will use the mythical Some::Syntax::Highlighter to turn the given content
+into HTML, acting on blocks like:
+
+You'll probably also want to specify a default format name indicating what
+regions to transform by doing this:
+
+  has '+format_name' => (default => 'js');
+
+With that done, the transformer will look for C<=begin js> or C<=for js>
+regions, or verbatim paragraphs beginning with C<#!js> and feed them to the
+syntax highlighter.
+
+=head2 How It Works
+
 This role provides a C<transform_node> method.  It will call
 C<synhi_params_for_para> for each paragraph under the node.  If that method
 returns false, nothing happens.  If it returns a true value, that value will be
 passed to the C<build_html> method, which should return HTML to be placed in an
-C<html> region and used to replace the node that was found.
+C<html> region and used to replace the node that was found.  C<build_html> is
+the one method you B<must> write for yourself!
 
-The role provides a default C<synhi_params_for_para> which expects either
-regions like C<=begin :format_name param> or verbatim paragraphs beginning with
-C<#!format_name param> and calls C<parse_synhi_param> with the C<param> string
-found (if one is found).  The default C<parse_synhi_param> will raise an
-exception if the param string is not empty.
+SynHi transformers have a C<format_name> attribute.  The default
+C<synhi_params_for_para> will look for begin/end or for regions with that
+format name, or for verbatim paragraphs that start with C<!#formatname>.  Any
+text following the format name will be passed to C<parse_synhi_param> and the
+result will be passed as the C<$param> argument seen above.  The rest of the
+content (excluding the shebang line, if one was used) will be the C<$content>
+argument.
 
-In effect, that means you can provide just one method:
+The default C<parse_synhi_param> will raise an exception if the param string is
+not empty.
 
-  sub build_html {
-    my ($self, $arg) = @_;
-
-    return Some::Syntax::Highlighter->javascript_to_html( $arg->{content} );
-  }
-
-Then, assuming that mythical module exists, C<=begin javascript> and C<=for
-javascript> regions would be replaced with C<=begin html> regions for
-downstream processing.
-
-Some other methods exist and can be replaced.
+All the documentation of attributes and methods below will be of use primarily
+if you are trying to do something more complex than described above.
 
 =cut
 
 requires 'build_html';
-requires 'format_name';
+
+=attr format_name
+
+This is the format name used to mark regions for syntax highlighting.  It must
+be a valid format name and must be provided.  Classes composing this role are
+expected (but not required) to provide a default.
+
+=cut
+
+has format_name => (
+  is  => 'ro',
+  isa => FormatName,
+  required => 1,
+);
 
 =method synhi_params_for_para
+
+  my $maybe_result = $xformer->synhi_params_for_para($pod_para);
+
+This method is called for each paragraph the transformer considers.  It should
+return either false or an arrayref in the form:
+
+  [ $content_string, $parameters ]
+
+The behavior of the default C<synhi_params_for_para> is described above: it
+looks for regions with the proper format name or verbatim paragraphs starting
+with shebang lines.  It parses post-format-name line content with the
+C<parse_synhi_param> method below.
 
 =cut
 
@@ -57,22 +104,38 @@ sub synhi_params_for_para {
       if $para->is_pod;
 
     my $param_str = $para->content;
-    return {
-      content => $para->children->[0]->as_pod_string,
-      options => $self->parse_synhi_param($param_str // ''),
-    };
+    return [
+      $para->children->[0]->as_pod_string,
+      $self->parse_synhi_param($param_str // ''),
+    ];
   } elsif ($para->isa('Pod::Elemental::Element::Pod5::Verbatim')) {
     my $content = $para->content;
     return unless $content =~ s/\A\s*#!\Q$name\E(?:[\x20\t]+([^\n]+)?)?\n+//gm;
 
-    return {
-      content => $content,
-      options => $self->parse_synhi_param($1 // ''),
-    };
+    return [
+      $content,
+      $self->parse_synhi_param($1 // ''),
+    ];
   }
 
   return;
 }
+
+=method parse_synhi_param
+
+In the example lines:
+
+  =begin formatname parameter string
+
+  #!formatname parameter string
+
+The string "parameter string" can be any arbitrary string that may alter the
+way the SynHi tranformer will work.  This method parses that string and returns
+the result.  This will usually be done by individual syntax highlighting
+classes.  The default method provided will return an empty hashref if the
+parameter string is empty and will raise an exception otherwise.
+
+=cut
 
 sub parse_synhi_param {
   my ($self, $str) = @_;
@@ -83,14 +146,17 @@ sub parse_synhi_param {
 
 =method build_html_para
 
-This method sits between C<synhi_params_for_para> and C<build_html>.  It's
-called with the synhi params, calls C<build_html>, and raps the resulting HTML
-content in a Data paragraph in a non-pod C<html> region, which is returned.
+Whenever the C<synhi_params_for_para> method returns true, this method is
+called with the result (array-dereferenced) and the result of I<this> method is
+used to replace the original paragraph.  The default implementation of this
+method is probably suitable for everyone: it passes its parameters along to the
+C<build_html> method, constructs a C<html> region containing the resultant
+string, and returns that.
 
 =cut
 
 sub build_html_para {
-  my ($self, $arg) = @_;
+  my ($self, $content, $param) = @_;
 
   my $new = Pod::Elemental::Element::Pod5::Region->new({
     format_name => 'html',
@@ -98,7 +164,7 @@ sub build_html_para {
     content     => '',
     children    => [
       Pod::Elemental::Element::Pod5::Data->new({
-        content => $self->build_html($arg),
+        content => $self->build_html($content, $param),
       }),
     ],
   });
@@ -157,7 +223,7 @@ sub transform_node {
     my $para = $node->children->[ $i ];
 
     next unless my $arg = $self->synhi_params_for_para($para);
-    my $new = $self->build_html_para($arg);
+    my $new = $self->build_html_para(@$arg);
 
     die "couldn't produce new html" unless $new;
     $node->children->[ $i ] = $new;

@@ -3,6 +3,24 @@ use Moose;
 with 'Pod::Elemental::Transformer';
 # ABSTRACT: apply multiple SynHi transformers to one document in one pass
 
+=head1 SYNOPSIS
+
+  my $xform = Pod::Elemental::Transformer::SynMux->new({
+    transformers => [ @list_of_SynHi_transformers ],
+  });
+
+  $xform->transform_node( $pod_document );
+
+=head1 OVERVIEW
+
+SynMux uses an array of SynHi transformers to perform syntax highlighting
+markup in one pass over the input Pod.
+
+If multiple transformers for the same format name have been given, an exception
+will be thrown at object construction time.
+
+=cut
+
 use MooseX::Types;
 use MooseX::Types::Moose qw(ArrayRef);
 
@@ -22,13 +40,23 @@ sub transform_node {
 
     XFORM: for my $xform (@{ $self->transformers }) {
       next XFORM unless my $arg = $xform->synhi_params_for_para($para);
-      my $new = $xform->build_html_para($arg);
+      my $new = $xform->build_html_para(@$arg);
 
       $node->children->[ $i ] = $new;
     }
   }
 
   return $node;
+}
+
+sub BUILD {
+  my ($self) = @_;
+
+  my %seen;
+  for (map {; $_->format_name } @{ $self->transformers }) {
+    confess "format name $_ used by more than one transformer"
+      if $seen{ $_ }++;
+  }
 }
 
 1;

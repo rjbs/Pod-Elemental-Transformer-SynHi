@@ -1,5 +1,6 @@
 package Pod::Elemental::Transformer::Codebox;
 use Moose;
+with 'Pod::Elemental::Transformer::SynHi';
 # ABSTRACT: convert "=begin code" regions to SynHi boxes with no colorization
 
 =head1 DESCRIPTION
@@ -31,7 +32,7 @@ future.
 
 use HTML::Entities ();
 
-has format_name => (is => 'ro', isa => 'Str', default => 'code');
+has '+format_name' => (default => 'code');
 
 sub build_html {
   my ($self, $arg) = @_;
@@ -45,5 +46,4 @@ sub build_html {
   );
 }
 
-with 'Pod::Elemental::Transformer::SynHi';
 1;

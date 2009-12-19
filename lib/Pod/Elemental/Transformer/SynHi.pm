@@ -103,18 +103,30 @@ sub synhi_params_for_para {
     confess "=begin :$name makes no sense; must be non-Pod region"
       if $para->is_pod;
 
-    my $param_str = $para->content;
-    return [
-      $para->children->[0]->as_pod_string,
-      $self->parse_synhi_param($param_str // ''),
-    ];
-  } elsif ($para->isa('Pod::Elemental::Element::Pod5::Verbatim')) {
-    my $content = $para->content;
-    return unless $content =~ s/\A\s*#!\Q$name\E(?:[\x20\t]+([^\n]+)?)?\n+//gm;
+    confess "non-Pod region must exactly one child" unless
+      @{ $para->children } == 1;
+
+    my $content = $para->children->[0]->as_pod_string;
+    my ($leading) = $content =~ /\A(?:^\h*$)*^(\h*)\S/m;
+    $content =~ s/^$leading//gm;
 
     return [
       $content,
-      $self->parse_synhi_param($1 // ''),
+      $self->parse_synhi_param($para->content // ''),
+    ];
+  } elsif ($para->isa('Pod::Elemental::Element::Pod5::Verbatim')) {
+    my $content = $para->content;
+
+    return
+      unless $content =~ s/\A(\h*)#!\Q$name\E(?:[\x20\t]+([^\n]+)?)?\n+//gm;
+
+    my ($leading, $param) = ($1, $2);
+
+    $content =~ s/^$leading//gm;
+
+    return [
+      $content,
+      $self->parse_synhi_param($param // ''),
     ];
   }
 

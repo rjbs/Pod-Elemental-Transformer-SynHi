@@ -17,9 +17,9 @@ C<html> region and used to replace the node that was found.
 
 The role provides a default C<synhi_params_for_para> which expects either
 regions like C<=begin :format_name param> or verbatim paragraphs beginning with
-C<#!format_name param> and calls C<extra_synhi_params> with the C<param> string
-found.  The default C<extra_synhi_params> will raise an exception if the param
-string is not empty.
+C<#!format_name param> and calls C<parse_synhi_param> with the C<param> string
+found (if one is found).  The default C<parse_synhi_param> will raise an
+exception if the param string is not empty.
 
 In effect, that means you can provide just one method:
 
@@ -59,7 +59,7 @@ sub synhi_params_for_para {
     my $param_str = $para->content;
     return {
       content => $para->children->[0]->as_pod_string,
-      options => $self->extra_synhi_options($param_str),
+      options => $self->parse_synhi_param($param_str // ''),
     };
   } elsif ($para->isa('Pod::Elemental::Element::Pod5::Verbatim')) {
     my $content = $para->content;
@@ -67,42 +67,18 @@ sub synhi_params_for_para {
 
     return {
       content => $content,
-      options => $self->extra_synhi_options($1),
+      options => $self->parse_synhi_param($1 // ''),
     };
   }
 
   return;
 }
 
-sub validate_synhi_options {
-  my ($self, $opt) = @_;
-  confess "no synhi parameters are accepted" if keys %$opt;
-}
-
-sub extra_synhi_options {
-  my ($self, $str) = @_;
-  my $opt = $self->parse_default_synhi_option_string($str);
-  $self->validate_synhi_options($opt);
-
-  return $opt;
-}
-
-sub parse_default_synhi_option_string {
+sub parse_synhi_params {
   my ($self, $str) = @_;
 
-  return {} unless defined $str;
-
-  my %opt;
-
-  my @hunks = split /\s+/, $str;
-  for my $hunk (@hunks) {
-    my ($key, $value) = split /=/, $hunk, 2;
-    $value //= 1;
-
-    $opt{ $key } = $value;
-  }
-
-  return \%opt;
+  confess "don't know how to parse synhi parameter '$str'" if $str =~ /\S/;
+  return {};
 }
 
 =method build_html_para

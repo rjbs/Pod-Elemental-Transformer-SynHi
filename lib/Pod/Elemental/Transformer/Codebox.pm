@@ -24,10 +24,6 @@ This form is also accepted, in a verbatim paragraph:
 
 In the above example, the shebang-like line will be stripped.
 
-B<Achtung!>  Two leading spaces are stripped from each line of the content to
-be highlighted.  This behavior may change and become more configurable in the
-future.
-
 =cut
 
 use HTML::Entities ();
@@ -39,11 +35,7 @@ sub build_html {
   my $string = $arg->{content};
   my $syntax = $arg->{syntax};
 
-  $string =~ s/^  //gms;
-
-  return $self->standard_code_block(
-    HTML::Entities::encode_entities($string)
-  );
+  return $self->standard_code_block( HTML::Entities::encode_entities($string));
 }
 
 1;

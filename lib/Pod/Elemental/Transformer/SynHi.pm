@@ -57,32 +57,52 @@ sub synhi_params_for_para {
       if $para->is_pod;
 
     my $param_str = $para->content;
-    my $arg = $self->extra_synhi_params($param_str);
     return {
-      %$arg,
       content => $para->children->[0]->as_pod_string,
+      options => $self->extra_synhi_options($param_str),
     };
   } elsif ($para->isa('Pod::Elemental::Element::Pod5::Verbatim')) {
     my $content = $para->content;
     return unless $content =~ s/\A\s*#!\Q$name\E(?:[\x20\t]+([^\n]+)?)?\n+//gm;
 
-    my $arg = $self->extra_synhi_params($1);
     return {
-      %$arg,
       content => $content,
+      options => $self->extra_synhi_options($1),
     };
   }
 
   return;
 }
 
-sub extra_synhi_params {
+sub validate_synhi_options {
+  my ($self, $opt) = @_;
+  confess "no synhi parameters are accepted" if keys %$opt;
+}
+
+sub extra_synhi_options {
+  my ($self, $str) = @_;
+  my $opt = $self->parse_default_synhi_option_string($str);
+  $self->validate_synhi_options($opt);
+
+  return $opt;
+}
+
+sub parse_default_synhi_option_string {
   my ($self, $str) = @_;
 
-  confess "don't know how to parse synhi region params: $str"
-    if defined $str and $str =~ /\S/;
+  return {} unless defined $str;
 
-  return {};
+  my %opt;
+
+  my @hunks = split /\s+/, $str;
+  for my $hunk (@hunks) {
+    my ($key, $value) = split /=/, $hunk, 2;
+    $value //= 1;
+
+    $opt{ $key } = $value;
+  }
+
+  return \%opt;
 }
 
 =method build_html_para

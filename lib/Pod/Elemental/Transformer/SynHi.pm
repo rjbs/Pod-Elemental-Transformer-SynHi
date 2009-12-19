@@ -74,7 +74,7 @@ sub synhi_params_for_para {
   return;
 }
 
-sub parse_synhi_params {
+sub parse_synhi_param {
   my ($self, $str) = @_;
 
   confess "don't know how to parse synhi parameter '$str'" if $str =~ /\S/;

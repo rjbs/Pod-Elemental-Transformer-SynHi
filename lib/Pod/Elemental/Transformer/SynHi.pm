@@ -75,6 +75,20 @@ has format_name => (
   required => 1,
 );
 
+=attr use_standard_wrapper
+
+This boolean, which defaults to true, controls whether the output of a SynHi
+transformer's C<build_html> method is automatically wrapped with
+C<L</standard_code_block>>.
+
+=cut
+
+has use_standard_wrapper => (
+  is  => 'rw',
+  isa => 'Bool',
+  default => 1,
+);
+
 =method synhi_params_for_para
 
   my $maybe_result = $xformer->synhi_params_for_para($pod_para);
@@ -170,14 +184,15 @@ string, and returns that.
 sub build_html_para {
   my ($self, $content, $param) = @_;
 
+  my $html = $self->build_html($content, $param);
+  $html = $self->standard_code_block($html) if $self->use_standard_wrapper;
+
   my $new = Pod::Elemental::Element::Pod5::Region->new({
     format_name => 'html',
     is_pod      => 0,
     content     => '',
     children    => [
-      Pod::Elemental::Element::Pod5::Data->new({
-        content => $self->build_html($content, $param),
-      }),
+      Pod::Elemental::Element::Pod5::Data->new({ content => $html }),
     ],
   });
 

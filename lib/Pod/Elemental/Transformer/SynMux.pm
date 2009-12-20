@@ -1,7 +1,9 @@
 package Pod::Elemental::Transformer::SynMux;
 use Moose;
-with 'Pod::Elemental::Transformer';
+with 'Pod::Elemental::Transformer::SynHi';
 # ABSTRACT: apply multiple SynHi transformers to one document in one pass
+
+use namespace::autoclean;
 
 =head1 SYNOPSIS
 
@@ -21,10 +23,16 @@ will be thrown at object construction time.
 
 =cut
 
+use List::MoreUtils qw(natatime);
 use MooseX::Types;
-use MooseX::Types::Moose qw(ArrayRef);
+use MooseX::Types::Moose qw(Maybe ArrayRef HashRef);
+use Pod::Elemental::Types qw(FormatName);
 
-use namespace::autoclean;
+has format_name => (
+  is  => 'ro',
+  isa => Maybe[ FormatName ],
+  default => 'synmux',
+);
 
 has transformers => (
   is  => 'ro',
@@ -38,24 +46,80 @@ sub transform_node {
   CHILD: for my $i (0 .. (@{ $node->children } - 1)) {
     my $para = $node->children->[ $i ];
 
-    XFORM: for my $xform (@{ $self->transformers }) {
-      next XFORM unless my $arg = $xform->synhi_params_for_para($para);
-      my $new = $xform->build_html_para(@$arg);
-
+    if (
+      defined $self->format_name
+      and my $arg = $self->synhi_params_for_para($para)
+    ) {
+      my $new = $self->build_html_para(@$arg);
       $node->children->[ $i ] = $new;
+    } else {
+      XFORM: for my $xform (@{ $self->transformers }) {
+        next XFORM unless my $arg = $xform->synhi_params_for_para($para);
+        my $new = $xform->build_html_para(@$arg);
+
+        $node->children->[ $i ] = $new;
+      }
     }
   }
 
   return $node;
 }
 
+sub build_html {
+  my ($self, $str, $param) = @_;
+
+  my $marker = $param->{marker};
+
+  my (@hunks) = split /^\Q$marker\E(\S+)(?:\h+([^\n]+))?\n/m, $str;
+  shift @hunks; # eliminate the leading pre-marker space
+
+  my $html = '';
+  my $iter = natatime 3, @hunks;
+  while (my ($name, $param_str, $content) = $iter->()) {
+    my $xform = $self->_name_registry->{ $name };
+
+    confess "unknown transformation $name in SynMux region" unless $xform;
+    my $param = $xform->parse_synhi_param($param_str);
+    $html .= $xform->build_html($content, $param);
+  }
+
+  return $html;
+}
+
+sub parse_synhi_param {
+  my ($self, $str) = @_;
+
+  my @opts = split /\s+/, $str;
+
+  $opts[0] //= 'marker:#!';
+
+  confess "illegal SynMux region parameter: $str"
+    unless @opts == 1 and $opts[0] =~ /\Amarker:/;
+
+  my (undef, $marker) = split /:/, $opts[0], 2;
+
+  return { marker => $marker };
+}
+
+has _name_registry => (
+  is  => 'ro',
+  isa => HashRef,
+  init_arg => undef,
+  default  => sub { {} },
+);
+
 sub BUILD {
   my ($self) = @_;
 
-  my %seen;
-  for (map {; $_->format_name } @{ $self->transformers }) {
+  for (@{ $self->transformers }) {
+    my ($name) = $_->format_name;
+    confess "format name $name already in use by SynMux transformer"
+      if defined $self->format_name and $name eq $self->format_name;
+
     confess "format name $_ used by more than one transformer"
-      if $seen{ $_ }++;
+      if $self->_name_registry->{ $name };
+
+    $self->_name_registry->{ $name } = $_
   }
 }
 

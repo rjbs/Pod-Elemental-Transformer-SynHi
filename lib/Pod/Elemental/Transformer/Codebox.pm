@@ -31,11 +31,9 @@ use HTML::Entities ();
 has '+format_name' => (default => 'code');
 
 sub build_html {
-  my ($self, $arg) = @_;
-  my $string = $arg->{content};
-  my $syntax = $arg->{syntax};
+  my ($self, $str, $param) = @_;
 
-  return $self->standard_code_block( HTML::Entities::encode_entities($string));
+  return $self->standard_code_block( HTML::Entities::encode_entities($str));
 }
 
 1;

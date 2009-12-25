@@ -259,4 +259,11 @@ sub transform_node {
   return $node;
 }
 
+=head1 SEE ALSO
+
+=for :list
+* L<Pod::Elemental::Transformer::SynMux>
+
+=cut
+
 1;

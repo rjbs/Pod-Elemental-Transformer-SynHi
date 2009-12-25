@@ -21,6 +21,24 @@ markup in one pass over the input Pod.
 If multiple transformers for the same format name have been given, an exception
 will be thrown at object construction time.
 
+Also, if the C<format_name> attribute for the transformer is set (and it
+defaults to set, to C<synmux>) then a single hunk of code may be marked to be
+syntax highlighted by multiple highlighters, then concatenated together, for
+example:
+
+  #!synmux
+  #!perl
+
+  print "This code will be highlighted with the #!perl highlighter.";
+  #!vim javascript
+
+  console.log("...and this code by VimHTML javascript syntax.");
+
+All the shebang lines will be stripped.  Assuming the syntax highlighting
+transformers all behave close to the standard behavior, you'll end up with one
+code box with multiple styles of highlighting in it, which can be useful for
+marking up one document with a few kinds of syntax.
+
 =cut
 
 use List::MoreUtils qw(natatime);
@@ -122,5 +140,12 @@ sub BUILD {
     $self->_name_registry->{ $name } = $_
   }
 }
+
+=head1 SEE ALSO
+
+=for :list
+* L<Pod::Elemental::Transformer::SynHi>
+
+=cut
 
 1;

@@ -24,6 +24,11 @@ This form is also accepted, in a verbatim paragraph:
 
 In the above example, the shebang-like line will be stripped.
 
+=head1 SEE ALSO
+
+=for :list
+* L<Pod::Elemental::Transformer::SynHi>
+
 =cut
 
 use HTML::Entities ();

@@ -1,3 +1,4 @@
+use v5.10.0;
 package Pod::Elemental::Transformer::Codebox;
 use Moose;
 with 'Pod::Elemental::Transformer::SynHi';

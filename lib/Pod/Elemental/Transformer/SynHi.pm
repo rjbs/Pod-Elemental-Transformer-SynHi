@@ -1,3 +1,4 @@
+use v5.10.0;
 package Pod::Elemental::Transformer::SynHi;
 use Moose::Role;
 with 'Pod::Elemental::Transformer';

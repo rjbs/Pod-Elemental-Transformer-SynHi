@@ -1,6 +1,7 @@
 Revision history for {{$dist->name}}
 
 {{$NEXT}}
+          fix CodeBox to not wrap in standard block; that's done by SynMux
 
 0.100250  2010-01-25 08:49:25 America/New_York
           note requirement of perl 5.10.0

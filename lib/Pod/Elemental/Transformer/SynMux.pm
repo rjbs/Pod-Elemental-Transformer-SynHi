@@ -77,6 +77,7 @@ sub transform_node {
         my $new = $xform->build_html_para(@$arg);
 
         $node->children->[ $i ] = $new;
+        last XFORM;
       }
     }
   }

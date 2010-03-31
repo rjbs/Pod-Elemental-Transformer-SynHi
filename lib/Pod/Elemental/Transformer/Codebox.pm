@@ -39,7 +39,7 @@ has '+format_name' => (default => 'code');
 sub build_html {
   my ($self, $str, $param) = @_;
 
-  return $self->standard_code_block( HTML::Entities::encode_entities($str));
+  return HTML::Entities::encode_entities($str);
 }
 
 1;

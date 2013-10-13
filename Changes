@@ -1,6 +1,7 @@
 Revision history for {{$dist->name}}
 
 {{$NEXT}}
+          update bugtracker and repo
 
 0.100890  2010-03-30 23:11:14 America/New_York
           fix CodeBox to not wrap in standard block; that's done by SynMux

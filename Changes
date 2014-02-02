@@ -1,6 +1,7 @@
 Revision history for {{$dist->name}}
 
 {{$NEXT}}
+          fix case of github links
 
 0.100891  2013-10-12 22:25:59 America/New_York
           update bugtracker and repo

@@ -1,8 +1,9 @@
 use v5.10.0;
 package Pod::Elemental::Transformer::SynMux;
+# ABSTRACT: apply multiple SynHi transformers to one document in one pass
+
 use Moose;
 with 'Pod::Elemental::Transformer::SynHi';
-# ABSTRACT: apply multiple SynHi transformers to one document in one pass
 
 use namespace::autoclean;
 

@@ -1,8 +1,9 @@
 use v5.10.0;
 package Pod::Elemental::Transformer::Codebox;
+# ABSTRACT: convert "=begin code" regions to SynHi boxes with no colorization
+
 use Moose;
 with 'Pod::Elemental::Transformer::SynHi';
-# ABSTRACT: convert "=begin code" regions to SynHi boxes with no colorization
 
 =head1 DESCRIPTION
 

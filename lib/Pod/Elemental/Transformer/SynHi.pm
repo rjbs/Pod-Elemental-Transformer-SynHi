@@ -1,8 +1,9 @@
 use v5.10.0;
 package Pod::Elemental::Transformer::SynHi;
+# ABSTRACT: a role for transforming code into syntax highlighted HTML regions
+
 use Moose::Role;
 with 'Pod::Elemental::Transformer';
-# ABSTRACT: a role for transforming code into syntax highlighted HTML regions
 
 use Pod::Elemental::Types qw(FormatName);
 

@@ -1,6 +1,8 @@
 Revision history for {{$dist->name}}
 
 {{$NEXT}}
+
+0.101000  2014-02-01 19:37:27-05:00 America/New_York
           fix case of github links
 
 0.100891  2013-10-12 22:25:59 America/New_York

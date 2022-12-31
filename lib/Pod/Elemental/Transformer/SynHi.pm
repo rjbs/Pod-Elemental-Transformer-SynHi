@@ -1,4 +1,4 @@
-use v5.10.0;
+use v5.12.0;
 package Pod::Elemental::Transformer::SynHi;
 # ABSTRACT: a role for transforming code into syntax highlighted HTML regions
 

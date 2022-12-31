@@ -1,4 +1,4 @@
-use v5.10.0;
+use v5.12.0;
 package Pod::Elemental::Transformer::Codebox;
 # ABSTRACT: convert "=begin code" regions to SynHi boxes with no colorization
 

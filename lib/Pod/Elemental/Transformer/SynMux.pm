@@ -1,4 +1,4 @@
-use v5.10.0;
+use v5.12.0;
 package Pod::Elemental::Transformer::SynMux;
 # ABSTRACT: apply multiple SynHi transformers to one document in one pass
 

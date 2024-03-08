@@ -237,10 +237,7 @@ sub standard_code_block {
   # Another stupid hack: the <code> blocks below force monospace font.  It
   # can't wrap the whole table, though, because it would cause styling issues
   # in the rendered XHTML. -- rjbs, 2009-12-10
-  $html = "<table class='code-listing'><tr>"
-        . "<td class='line-numbers'><br /><code>$nums</code><br />&nbsp;</td>"
-        . "<td class='code'><br /><code>$code</code><br />&nbsp;</td>"
-        . "</table>";
+  $html = "<pre><code class=\"code-listing\">$code</code></pre>";
 
   return $html;
 }
